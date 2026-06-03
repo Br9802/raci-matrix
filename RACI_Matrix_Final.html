@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AMSI · WorxOps — Fleet RACI Matrix</title>
+<style>
+  :root {
+    --blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-600:#185FA5;--blue-800:#0C447C;
+    --green-50:#EAF3DE;--green-100:#C0DD97;--green-600:#3B6D11;--green-800:#27500A;
+    --coral-50:#FAECE7;--coral-100:#F5C4B3;--coral-600:#993C1D;
+    --amber-50:#FAEEDA;--amber-100:#FAC775;--amber-600:#854F0B;
+    --gray-50:#F1EFE8;--gray-100:#D3D1C7;--gray-400:#888780;--gray-600:#5F5E5A;--gray-800:#444441;
+    --purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-800:#3C3489;
+    --bg:#ffffff;--bg2:#F7F7F5;--bg3:#F1EFE8;
+    --text:#1a1a18;--text2:#5F5E5A;--text3:#888780;
+    --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+    --radius:8px;--radius-lg:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F3EF;color:var(--text);font-size:14px;min-height:100vh;}
+
+  /* AUTH SCREEN */
+  #authScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:24px;padding:2rem;}
+  .auth-card{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border2);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.07);}
+  .auth-logo{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--text2);text-transform:uppercase;margin-bottom:1.5rem;}
+  .auth-logo span{color:var(--blue-600);}
+  .auth-title{font-size:22px;font-weight:600;color:var(--text);margin-bottom:8px;}
+  .auth-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1.75rem;}
+  .google-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 20px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);width:100%;transition:background 0.15s;}
+  .google-btn:hover{background:var(--bg2);}
+  .google-btn svg{width:18px;height:18px;flex-shrink:0;}
+  .auth-note{font-size:11px;color:var(--text3);margin-top:1rem;line-height:1.5;}
+
+  /* APP */
+  #app{display:none;flex-direction:column;min-height:100vh;}
+  .topnav{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:16px;height:52px;position:sticky;top:0;z-index:50;}
+  .nav-logo{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);}
+  .nav-logo span{color:var(--blue-600);}
+  .nav-title{font-size:14px;font-weight:500;color:var(--text);}
+  .nav-sep{width:1px;height:20px;background:var(--border);}
+  .nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .sync-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;}
+  .sync-ok{background:var(--green-50);color:var(--green-600);}
+  .sync-saving{background:var(--amber-50);color:var(--amber-600);}
+  .sync-err{background:var(--coral-50);color:var(--coral-600);}
+  .user-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);}
+  .user-av{width:26px;height:26px;border-radius:50%;background:var(--blue-50);color:var(--blue-800);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;}
+  .btn-sm{font-size:12px;padding:5px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);cursor:pointer;}
+  .btn-sm:hover{background:var(--bg2);}
+  .btn-primary{background:var(--blue-600);color:#fff;border-color:var(--blue-600);}
+  .btn-primary:hover{background:var(--blue-800);}
+
+  .main{padding:1.5rem;max-width:1400px;margin:0 auto;width:100%;}
+
+  /* TEAM SECTION */
+  .section-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:10px;}
+  .team-grid{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:1.5rem;}
+  .team-card{flex:1;min-width:240px;background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);padding:14px;}
+  .team-card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .org-pill{font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;}
+  .op-amsi{background:var(--blue-50);color:var(--blue-800);}
+  .op-worx{background:var(--green-50);color:var(--green-800);}
+  .person-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;}
+  .av-a{background:var(--blue-50);color:var(--blue-800);}
+  .av-w{background:var(--green-50);color:var(--green-800);}
+  .inp{font-size:12px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);outline:none;min-width:0;}
+  .inp:focus{border-color:var(--border2);}
+  .inp-name{flex:1;}
+  .inp-role{width:140px;}
+  .del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:0 2px;line-height:1;flex-shrink:0;}
+  .del-btn:hover{color:var(--text);}
+  .add-row{font-size:11px;padding:4px 0;border:none;background:none;color:var(--text3);cursor:pointer;display:flex;align-items:center;gap:4px;margin-top:4px;}
+  .add-row:hover{color:var(--text);}
+  .rebuild-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .rebuild-note{font-size:11px;color:var(--text3);}
+
+  /* LEGEND */
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem;}
+  .leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);}
+  .lb{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+  .lb-r{background:var(--blue-100);color:var(--blue-800);}
+  .lb-a{background:var(--coral-100);color:var(--coral-600);}
+  .lb-c{background:var(--green-100);color:var(--green-800);}
+  .lb-i{background:var(--gray-100);color:var(--gray-800);}
+
+  /* FILTERS */
+  .filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;align-items:center;}
+  .fb{font-size:11px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;white-space:nowrap;}
+  .fb:hover{background:var(--bg2);}
+  .fb.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:1.25rem;}
+  .stat{background:var(--bg);border-radius:var(--radius);padding:10px 12px;border:0.5px solid var(--border);}
+  .stat-v{font-size:22px;font-weight:600;}
+  .stat-l{font-size:10px;color:var(--text2);margin-top:1px;}
+
+  /* TABLE */
+  .tbl-wrap{overflow-x:auto;background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  thead th{padding:8px 6px;text-align:center;font-size:10px;font-weight:600;color:var(--text2);border-bottom:0.5px solid var(--border);white-space:nowrap;position:sticky;top:52px;background:var(--bg);z-index:10;}
+  thead th.pc{text-align:left;padding-left:12px;width:200px;min-width:180px;}
+  th.ha{background:var(--blue-50)!important;color:var(--blue-800)!important;}
+  th.hw{background:var(--green-50)!important;color:var(--green-800)!important;}
+  tbody tr{border-bottom:0.5px solid var(--border);}
+  tbody tr:hover td{background:var(--bg2);}
+  tr.ph-row td{background:var(--bg3)!important;font-weight:600;font-size:11px;color:var(--text);padding:6px 12px;}
+  td{padding:5px 4px;vertical-align:middle;text-align:center;}
+  td.pn{text-align:left;padding-left:12px;font-size:11px;color:var(--text);line-height:1.4;min-width:180px;}
+  td.pn .kpi{font-size:9px;color:var(--text3);margin-top:1px;}
+  .cell-inner{display:flex;flex-direction:column;gap:2px;align-items:center;min-width:68px;}
+  .pill{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;}
+  .pill-r{background:var(--blue-100);color:var(--blue-800);}
+  .pill-a{background:var(--coral-100);color:var(--coral-600);}
+  .pill-c{background:var(--green-100);color:var(--green-800);}
+  .pill-i{background:var(--gray-100);color:var(--gray-800);}
+  .pill-x{background:none;border:none;cursor:pointer;font-size:10px;padding:0;line-height:1;color:inherit;opacity:0.6;}
+  .pill-x:hover{opacity:1;}
+  .plus-btn{font-size:10px;padding:2px 8px;border:0.5px dashed var(--border2);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer;}
+  .plus-btn:hover{background:var(--bg2);color:var(--text);}
+  .ph-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:center;padding-top:80px;z-index:200;}
+  .modal{background:var(--bg);border-radius:var(--radius-lg);border:0.5px solid var(--border2);padding:1.5rem;width:360px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+  .modal-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+  .modal-proc{font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5;}
+  .modal-sec{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;margin-top:12px;}
+  .ppl-list{max-height:220px;overflow-y:auto;}
+  .popt{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius);cursor:pointer;border:0.5px solid transparent;margin-bottom:4px;}
+  .popt:hover{background:var(--bg2);}
+  .popt.sel{border-color:var(--blue-600);background:var(--blue-50);}
+  .po-name{font-size:12px;font-weight:500;flex:1;}
+  .po-role{font-size:10px;color:var(--text2);}
+  .raci-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+  .ropt{padding:6px 14px;border-radius:var(--radius);border:0.5px solid var(--border);background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;}
+  .ropt:hover{background:var(--bg2);}
+  .ropt.sr{background:var(--blue-100);color:var(--blue-800);border-color:var(--blue-100);}
+  .ropt.sa{background:var(--coral-100);color:var(--coral-600);border-color:var(--coral-100);}
+  .ropt.sc{background:var(--green-100);color:var(--green-800);border-color:var(--green-100);}
+  .ropt.si{background:var(--gray-100);color:var(--gray-800);border-color:var(--gray-100);}
+  .modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+
+  /* EXPORT */
+  .export-bar{display:flex;gap:8px;padding:1.25rem 0 0.5rem;border-top:0.5px solid var(--border);margin-top:1.5rem;flex-wrap:wrap;align-items:center;}
+  .export-note{font-size:11px;color:var(--text3);margin-left:auto;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;font-size:12px;padding:8px 18px;border-radius:20px;z-index:300;opacity:0;transition:opacity 0.2s;pointer-events:none;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo"><span>AMSI</span> · WorxOps</div>
+    <div class="auth-title">Fleet RACI Matrix</div>
+    <div class="auth-sub">Collaborative responsibility assignment for the end-to-end fleet management lifecycle. Sign in with Google to load and save assignments in real time.</div>
+    <button class="google-btn" onclick="signIn()">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Sign in with Google
+    </button>
+    <div class="auth-note">Your assignments are saved directly to a shared Google Sheet. Anyone with the sheet link can collaborate.</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <nav class="topnav">
+    <span class="nav-logo"><span>AMSI</span> · WorxOps</span>
+    <span class="nav-sep"></span>
+    <span class="nav-title">Fleet Management RACI Matrix</span>
+    <div class="nav-right">
+      <span class="sync-status sync-ok" id="syncStatus">● Synced</span>
+      <button class="btn-sm" onclick="loadFromSheet()">↻ Reload</button>
+      <button class="btn-sm" onclick="copySheetLink()">🔗 Sheet link</button>
+      <div class="user-chip">
+        <div class="user-av" id="userAv">?</div>
+        <span id="userName"></span>
+      </div>
+      <button class="btn-sm" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- TEAM -->
+    <div class="section-title">Team roster</div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-card-hdr"><span class="org-pill op-amsi">AMSI</span></div>
+        <div id="amsiList"></div>
+        <button class="add-row" onclick="addPerson('amsi')">+ Add person</button>
+      </div>
+      <div class="team-card">
+        <div class="team-card-hdr"><span class="org-pill op-worx">WorxOps</span></div>
+        <div id="worxList"></div>
+        <button class="add-row" onclick="addPerson('worx')">+ Add person</button>
+      </div>
+    </div>
+    <div class="rebuild-bar">
+      <button class="btn-sm btn-primary" onclick="rebuildMatrix()">▶ Build / refresh matrix</button>
+      <span class="rebuild-note">Edit names and roles freely above, then click to update the matrix columns.</span>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="leg"><span class="lb lb-r">R</span> Responsible — does the work</div>
+      <div class="leg"><span class="lb lb-a">A</span> Accountable — owns the outcome</div>
+      <div class="leg"><span class="lb lb-c">C</span> Consulted — input required</div>
+      <div class="leg"><span class="lb lb-i">I</span> Informed — kept in the loop</div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar" id="filterBar"></div>
+
+    <!-- STATS -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- TABLE -->
+    <div class="tbl-wrap">
+      <table id="raciTable">
+        <thead>
+          <tr id="hdr1"></tr>
+          <tr id="hdr2"></tr>
+        </thead>
+        <tbody id="raciBody"></tbody>
+      </table>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="export-bar">
+      <button class="btn-sm" onclick="exportCSV()">↓ Export CSV</button>
+      <button class="btn-sm" onclick="clearAssignments()">↺ Clear all assignments</button>
+      <span class="export-note" id="lastSaved"></span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title">Assign responsibility</div>
+    <div class="modal-proc" id="mProc"></div>
+    <div class="modal-sec" id="mSecLabel">Select person</div>
+    <div class="ppl-list" id="mPeople"></div>
+    <div class="modal-sec">RACI role</div>
+    <div class="raci-row">
+      <button class="ropt" id="opt-R" onclick="selRaci('R')">R — Responsible</button>
+      <button class="ropt" id="opt-A" onclick="selRaci('A')">A — Accountable</button>
+      <button class="ropt" id="opt-C" onclick="selRaci('C')">C — Consulted</button>
+      <button class="ropt" id="opt-I" onclick="selRaci('I')">I — Informed</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn-sm btn-primary" onclick="confirmAssign()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SHEET_ID = '1EVkjZbrmSMFXXtuqY_dN7xF0dq0SzIDPQ7dyljsaykQ';
+const CLIENT_ID = '490119090259-sska4vkqc2356g1ra1goptn1raur5lto.apps.googleusercontent.com'; // user must fill in — see instructions below
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const SHEET_NAME = 'RACI';
+
+// ── PHASES ───────────────────────────────────────────────────────────────────
+const PHASES = [
+  {phase:'Demand & Assignment',color:'#378ADD',procs:[
+    {name:'Assess availability, allocate vehicle & schedule trip',kpi:'Fulfillment Rate, Response Time'},
+    {name:'Issue assignment order to driver',kpi:'Response Time'},
+    {name:'Record utilisation data & costs',kpi:'Cost per Mile, Utilisation Rate'},
+  ]},
+  {phase:'Pre-trip Inspection',color:'#BA7517',procs:[
+    {name:'Driver performs pre-trip checklist & reports defects',kpi:'Pre-trip Compliance, Defects per Inspection'},
+    {name:'Evaluate defects — go / no-go decision',kpi:'Trip Readiness'},
+    {name:'Issue trip readiness confirmation',kpi:'Pre-trip Compliance'},
+  ]},
+  {phase:'Trip Execution',color:'#1D9E75',procs:[
+    {name:'Execute trip, telematics tracking, record usage',kpi:'On-time Delivery, Utilisation Rate'},
+    {name:'Monitor live telematics & GPS',kpi:'Utilisation Rate'},
+    {name:'Generate trip completion report',kpi:'On-time Delivery'},
+  ]},
+  {phase:'Incident & Exception',color:'#D85A30',procs:[
+    {name:'Identify & log incident during trip',kpi:'Incident Response Time'},
+    {name:'Evaluate incident, dispatch assistance, notify stakeholders',kpi:'Incident Response Time, Incidents/Mile'},
+    {name:'Incident resolution & claims processing',kpi:'MTTR'},
+  ]},
+  {phase:'Post-trip & Data Capture',color:'#3B6D11',procs:[
+    {name:'Driver logs issues, submits expenses, uploads telematics',kpi:'Data Timeliness, Post-trip Defect Rate'},
+    {name:'Assess maintenance required post-trip',kpi:'Post-trip Defect Rate'},
+    {name:'Update maintenance request / cleared status',kpi:'MTTR'},
+  ]},
+  {phase:'Maintenance & Repair',color:'#534AB7',procs:[
+    {name:'Raise work order for maintenance / repair',kpi:'MTTR'},
+    {name:'Diagnose, preventive maintenance, update history',kpi:'MTTR, PM Compliance, Maintenance Cost/Mile'},
+    {name:'Assess: economical to repair or dispose?',kpi:'Maintenance Cost/Mile'},
+    {name:'Return vehicle to fleet after service',kpi:'MTTR'},
+  ]},
+  {phase:'Fueling & Consumables',color:'#BA7517',procs:[
+    {name:'Reconcile fuel transactions & control usage',kpi:'Fuel Cost/Mile, Fuel Card Abuse'},
+    {name:'Generate fuel expense reports',kpi:'Fuel Cost/Mile'},
+  ]},
+  {phase:'Asset Lifecycle',color:'#185FA5',procs:[
+    {name:'Collect utilisation data for lifecycle analysis',kpi:'Fleet Age Profile'},
+    {name:'TCO analysis, acquisition planning, procurement',kpi:'TCO per Vehicle'},
+    {name:'Replace or retain decision — TCO & fleet age',kpi:'TCO per Vehicle, Fleet Age'},
+    {name:'New vehicle procurement & decommission plan',kpi:'Fleet Age'},
+  ]},
+  {phase:'Compliance & Licensing',color:'#993556',procs:[
+    {name:'License checks, permits, insurance renewals, audits',kpi:'Compliance Rate, Overdue Inspections'},
+    {name:'Issue compliance certificates & manage docs',kpi:'Compliance Rate'},
+    {name:'Maintain regulations & schedules register',kpi:'Compliance Rate'},
+  ]},
+  {phase:'Billing & Cost Allocation',color:'#639922',procs:[
+    {name:'Collate trip logs & costs for billing period',kpi:'Billing Accuracy'},
+    {name:'Allocate costs, generate invoices, financial reporting',kpi:'Cost per Mile, Billing Accuracy'},
+    {name:'Produce dashboards & cost reports',kpi:'Cost per Mile'},
+  ]},
+  {phase:'Continuous Improvement',color:'#5F5E5A',procs:[
+    {name:'Aggregate data from all modules',kpi:'All KPIs'},
+    {name:'Analyse KPIs, identify improvement opportunities',kpi:'Cost Savings, Reduction in Incidents'},
+    {name:'Implement initiatives & update policies',kpi:'Cost Savings'},
+  ]},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let amsiTeam = [
+  {id:'a1',name:'Brian',role:'CSO / BD Lead'},
+  {id:'a2',name:'Theo McCarthy',role:'CEO / Automation'},
+  {id:'a3',name:'Ivan van Rooyen',role:'T&A Specialist'},
+  {id:'a4',name:'',role:''},
+];
+let worxTeam = [
+  {id:'w1',name:'',role:'Fleet Manager'},
+  {id:'w2',name:'',role:'Platform Admin'},
+  {id:'w3',name:'',role:'Field Supervisor'},
+  {id:'w4',name:'',role:''},
+];
+let committedTeam = [];
+let assignments = {};
+let currentPhase = 'all';
+let modalState = {proc:null,personId:null,raci:null};
+let pCtr = 20;
+let tokenClient, accessToken;
+let saveTimer;
+
+// ── GOOGLE AUTH ───────────────────────────────────────────────────────────────
+function signIn() {
+  if (!CLIENT_ID) {
+    showInstructions();
+    return;
+  }
+  tokenClient.requestAccessToken({prompt:'consent'});
+}
+
+function showInstructions() {
+  document.getElementById('authScreen').innerHTML = `
+    <div class="auth-card" style="text-align:left;max-width:520px;">
+      <div class="auth-logo" style="text-align:center;margin-bottom:1.5rem;"><span>AMSI</span> · WorxOps Fleet RACI</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:12px;">One-time setup: connect to Google Sheets</div>
+      <p style="font-size:13px;color:#5F5E5A;line-height:1.7;margin-bottom:16px;">This file needs a free Google OAuth Client ID to read and write your Sheet. Takes about 3 minutes:</p>
+      <ol style="font-size:13px;color:#1a1a18;line-height:2;padding-left:1.2rem;">
+        <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:#185FA5;">console.cloud.google.com/apis/credentials</a></li>
+        <li>Create project → Enable <strong>Google Sheets API</strong></li>
+        <li>Create credentials → <strong>OAuth 2.0 Client ID</strong> → Web application</li>
+        <li>Add your file's location to <em>Authorised JavaScript origins</em></li>
+        <li>Copy the Client ID and paste it into this file replacing the <code style="background:#F1EFE8;padding:1px 5px;border-radius:4px;">CLIENT_ID = ''</code> line near the top of the &lt;script&gt;</li>
+        <li>Also set your Sheet to <strong>Anyone with the link → Editor</strong></li>
+        <li>Re-open the file and sign in</li>
+      </ol>
+      <p style="font-size:12px;color:#888780;margin-top:16px;line-height:1.6;">Your Sheet ID is already embedded: <code style="background:#F1EFE8;padding:1px 5px;border-radius:4px;">${SHEET_ID}</code></p>
+      <p style="font-size:12px;color:#888780;margin-top:8px;">Alternatively, use the <strong>standalone offline version</strong> and export CSV — no setup needed.</p>
+    </div>`;
+}
+
+function initGoogleAuth() {
+  if (!CLIENT_ID) { return; }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) { showToast('Auth error: ' + resp.error); return; }
+      accessToken = resp.access_token;
+      onSignedIn();
+    }
+  });
+}
+
+function onSignedIn() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  const info = parseJwt(accessToken) || {};
+  const name = info.name || info.email || 'User';
+  document.getElementById('userName').textContent = name.split(' ')[0];
+  document.getElementById('userAv').textContent = name.slice(0,2).toUpperCase();
+  renderTeamInputs();
+  renderFilters();
+  loadFromSheet();
+}
+
+function parseJwt(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch(e) { return null; }
+}
+
+function signOut() {
+  google.accounts.oauth2.revoke(accessToken, ()=>{
+    accessToken = null;
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  });
+}
+
+// ── SHEETS API ────────────────────────────────────────────────────────────────
+const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
+
+async function sheetsGet(range) {
+  const r = await fetch(`${SHEET_URL}/values/${encodeURIComponent(range)}`, {
+    headers: {Authorization: 'Bearer ' + accessToken}
+  });
+  return r.json();
+}
+
+async function sheetsUpdate(range, values) {
+  await fetch(`${SHEET_URL}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {
+    method:'PUT', headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    body: JSON.stringify({range, majorDimension:'ROWS', values})
+  });
+}
+
+async function sheetsAppend(values) {
+  await fetch(`${SHEET_URL}/values/${encodeURIComponent(SHEET_NAME+'!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
+    method:'POST', headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    body: JSON.stringify({majorDimension:'ROWS', values})
+  });
+}
+
+async function sheetsClear(range) {
+  await fetch(`${SHEET_URL}/values/${encodeURIComponent(range)}:clear`, {
+    method:'POST', headers:{'Authorization':'Bearer '+accessToken}
+  });
+}
+
+async function ensureSheet() {
+  const meta = await (await fetch(SHEET_URL, {headers:{Authorization:'Bearer '+accessToken}})).json();
+  const exists = meta.sheets && meta.sheets.some(s => s.properties.title === SHEET_NAME);
+  if (!exists) {
+    await fetch(`${SHEET_URL}:batchUpdate`, {
+      method:'POST', headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+      body: JSON.stringify({requests:[{addSheet:{properties:{title:SHEET_NAME}}}]})
+    });
+  }
+}
+
+async function saveToSheet() {
+  setSyncStatus('saving');
+  try {
+    await ensureSheet();
+    const range = SHEET_NAME + '!A1';
+    await sheetsClear(SHEET_NAME + '!A:Z');
+    const rows = [['phase','process','personId','personName','org','raci','timestamp']];
+    PHASES.forEach(ph => ph.procs.forEach(proc => {
+      (assignments[proc.name]||[]).forEach(a => {
+        const p = committedTeam.find(x=>x.id===a.personId)||{name:'',org:''};
+        rows.push([ph.phase, proc.name, a.personId, p.name, p.org, a.raci, new Date().toISOString()]);
+      });
+    }));
+    // save team too
+    rows.push(['__TEAM__','amsi', JSON.stringify(amsiTeam),'','','','']);
+    rows.push(['__TEAM__','worx', JSON.stringify(worxTeam),'','','','']);
+    await sheetsUpdate(range, rows);
+    setSyncStatus('ok');
+    document.getElementById('lastSaved').textContent = 'Last saved ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    setSyncStatus('err');
+    showToast('Save failed — check Sheet permissions');
+  }
+}
+
+async function loadFromSheet() {
+  setSyncStatus('saving');
+  try {
+    await ensureSheet();
+    const data = await sheetsGet(SHEET_NAME + '!A:G');
+    const rows = data.values || [];
+    assignments = {};
+    rows.forEach(row => {
+      if (row[0]==='__TEAM__') {
+        try {
+          if (row[1]==='amsi') amsiTeam = JSON.parse(row[2]);
+          if (row[1]==='worx') worxTeam = JSON.parse(row[2]);
+        } catch(e){}
+      } else if (row[0] && row[0]!=='phase' && row[1] && row[5]) {
+        const proc = row[1], pid = row[2], raci = row[5];
+        if (!assignments[proc]) assignments[proc]=[];
+        if (!assignments[proc].find(a=>a.personId===pid&&a.raci===raci)) {
+          assignments[proc].push({personId:pid, raci});
+        }
+      }
+    });
+    renderTeamInputs();
+    rebuildMatrix();
+    setSyncStatus('ok');
+    showToast('Loaded from Sheet');
+  } catch(e) {
+    setSyncStatus('err');
+    showToast('Load failed');
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToSheet, 1200);
+}
+
+function setSyncStatus(s) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status';
+  if (s==='ok') { el.classList.add('sync-ok'); el.textContent='● Synced'; }
+  else if (s==='saving') { el.classList.add('sync-saving'); el.textContent='◌ Saving…'; }
+  else { el.classList.add('sync-err'); el.textContent='✕ Error'; }
+}
+
+function copySheetLink() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+  navigator.clipboard.writeText(url).then(()=>showToast('Sheet link copied')).catch(()=>showToast(url));
+}
+
+// ── TEAM RENDER ───────────────────────────────────────────────────────────────
+function initials(n){ return (n||'').trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
+
+function renderTeamInputs() {
+  ['amsi','worx'].forEach(org => {
+    const el = document.getElementById(org+'List');
+    const team = org==='amsi'?amsiTeam:worxTeam;
+    el.innerHTML = '';
+    team.forEach((p,i) => {
+      const row = document.createElement('div'); row.className='person-row';
+      row.innerHTML = `
+        <div class="av ${org==='amsi'?'av-a':'av-w'}" id="av-${p.id}">${initials(p.name)}</div>
+        <input class="inp inp-name" placeholder="Full name" id="nm-${p.id}" value="${p.name||''}"/>
+        <input class="inp inp-role" placeholder="Role / title" id="rl-${p.id}" value="${p.role||''}"/>
+        <button class="del-btn" onclick="removePerson('${org}',${i})">×</button>`;
+      el.appendChild(row);
+      row.querySelector('#nm-'+p.id).addEventListener('input', e=>{
+        p.name=e.target.value;
+        const av=document.getElementById('av-'+p.id); if(av) av.textContent=initials(p.name);
+        scheduleSave();
+      });
+      row.querySelector('#rl-'+p.id).addEventListener('input', e=>{ p.role=e.target.value; scheduleSave(); });
+    });
+  });
+}
+
+function removePerson(org,i) {
+  const team=org==='amsi'?amsiTeam:worxTeam;
+  team.splice(i,1); renderTeamInputs(); scheduleSave();
+}
+
+function addPerson(org) {
+  const id=(org==='amsi'?'a':'w')+(++pCtr);
+  const team=org==='amsi'?amsiTeam:worxTeam;
+  team.push({id,name:'',role:''});
+  renderTeamInputs();
+  setTimeout(()=>{ const el=document.getElementById('nm-'+id); if(el)el.focus(); },40);
+}
+
+// ── MATRIX ────────────────────────────────────────────────────────────────────
+function rebuildMatrix() {
+  committedTeam = [
+    ...amsiTeam.filter(p=>p.name&&p.name.trim()).map(p=>({...p,org:'amsi'})),
+    ...worxTeam.filter(p=>p.name&&p.name.trim()).map(p=>({...p,org:'worx'})),
+  ];
+  renderHeaders(); renderBody(); updateStats();
+}
+
+function renderHeaders() {
+  const amsi=committedTeam.filter(p=>p.org==='amsi');
+  const worx=committedTeam.filter(p=>p.org==='worx');
+  const h1=document.getElementById('hdr1'), h2=document.getElementById('hdr2');
+  h1.innerHTML=`<th class="pc" rowspan="2">Process / Activity</th>`;
+  if(amsi.length) h1.innerHTML+=`<th colspan="${amsi.length}" class="ha">AMSI</th>`;
+  if(worx.length) h1.innerHTML+=`<th colspan="${worx.length}" class="hw">WorxOps</th>`;
+  h2.innerHTML='';
+  amsi.forEach(p=>{ h2.innerHTML+=`<th class="ha" style="font-weight:500;" title="${p.role}">${p.name}</th>`; });
+  worx.forEach(p=>{ h2.innerHTML+=`<th class="hw" style="font-weight:500;" title="${p.role}">${p.name}</th>`; });
+}
+
+function renderBody() {
+  const tbody=document.getElementById('raciBody');
+  tbody.innerHTML='';
+  if(!committedTeam.length){
+    const tr=document.createElement('tr'); const td=document.createElement('td');
+    td.colSpan=2; td.style.cssText='padding:24px;text-align:center;color:#888780;font-style:italic;';
+    td.textContent='Add team members above and click "Build / refresh matrix"';
+    tr.appendChild(td); tbody.appendChild(tr); return;
+  }
+  PHASES.forEach(ph=>{
+    if(currentPhase!=='all'&&ph.phase!==currentPhase) return;
+    const ptr=document.createElement('tr'); ptr.className='ph-row';
+    const ptd=document.createElement('td'); ptd.colSpan=1+committedTeam.length;
+    ptd.innerHTML=`<span class="ph-dot" style="background:${ph.color}"></span>${ph.phase}`;
+    ptr.appendChild(ptd); tbody.appendChild(ptr);
+    ph.procs.forEach(proc=>{
+      const tr=document.createElement('tr');
+      const ntd=document.createElement('td'); ntd.className='pn';
+      ntd.innerHTML=`${proc.name}<div class="kpi">${proc.kpi}</div>`;
+      tr.appendChild(ntd);
+      committedTeam.forEach(p=>{
+        const td=document.createElement('td'); td.style.minWidth='72px';
+        const pa=(assignments[proc.name]||[]).filter(a=>a.personId===p.id);
+        let html='<div class="cell-inner">';
+        pa.forEach(a=>{
+          const pn=esc(proc.name);
+          html+=`<div class="pill pill-${a.raci.toLowerCase()}">${a.raci}<button class="pill-x" onclick="removeAssign('${pn}','${p.id}','${a.raci}')">×</button></div>`;
+        });
+        const pn2=esc(proc.name);
+        html+=`<button class="plus-btn" onclick="openModal('${pn2}','${p.id}')">+</button></div>`;
+        td.innerHTML=html; tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(proc,pid) {
+  modalState={proc,personId:null,raci:null};
+  document.getElementById('mProc').textContent=proc;
+  const list=document.getElementById('mPeople'); list.innerHTML='';
+  const amsi=committedTeam.filter(p=>p.org==='amsi');
+  const worx=committedTeam.filter(p=>p.org==='worx');
+  if(amsi.length){
+    const l=document.createElement('div'); l.className='modal-sec'; l.style.color='#0C447C'; l.textContent='AMSI'; list.appendChild(l);
+    amsi.forEach(p=>list.appendChild(mkOpt(p,proc,pid)));
+  }
+  if(worx.length){
+    const l=document.createElement('div'); l.className='modal-sec'; l.style.color='#27500A'; l.textContent='WORXOPS'; list.appendChild(l);
+    worx.forEach(p=>list.appendChild(mkOpt(p,proc,pid)));
+  }
+  ['R','A','C','I'].forEach(r=>{ document.getElementById('opt-'+r).className='ropt'; });
+  document.getElementById('overlay').style.display='flex';
+}
+
+function mkOpt(p,proc,presel) {
+  const div=document.createElement('div'); div.className='popt';
+  const existing=(assignments[proc]||[]).filter(a=>a.personId===p.id).map(a=>a.raci);
+  const badges=existing.map(r=>`<span class="lb lb-${r.toLowerCase()}">${r}</span>`).join(' ');
+  div.innerHTML=`<div class="av ${p.org==='amsi'?'av-a':'av-w'}">${initials(p.name)}</div><div style="flex:1"><div class="po-name">${p.name}</div><div class="po-role">${p.role}</div></div><div style="display:flex;gap:3px;">${badges}</div>`;
+  if(p.id===presel){div.classList.add('sel');modalState.personId=p.id;}
+  div.onclick=()=>{
+    document.querySelectorAll('.popt').forEach(e=>e.classList.remove('sel'));
+    div.classList.add('sel'); modalState.personId=p.id;
+  };
+  return div;
+}
+
+function selRaci(r) {
+  modalState.raci=r;
+  ['R','A','C','I'].forEach(v=>{ document.getElementById('opt-'+v).className='ropt'+(v===r?' s'+r.toLowerCase():''); });
+}
+
+function confirmAssign() {
+  if(!modalState.personId||!modalState.raci){showToast('Pick a person and a RACI role');return;}
+  const proc=modalState.proc;
+  if(!assignments[proc]) assignments[proc]=[];
+  const dup=assignments[proc].find(a=>a.personId===modalState.personId&&a.raci===modalState.raci);
+  if(!dup) assignments[proc].push({personId:modalState.personId,raci:modalState.raci});
+  closeModal(); renderBody(); updateStats(); scheduleSave();
+}
+
+function removeAssign(proc,pid,raci) {
+  if(!assignments[proc]) return;
+  assignments[proc]=assignments[proc].filter(a=>!(a.personId===pid&&a.raci===raci));
+  renderBody(); updateStats(); scheduleSave();
+}
+
+function closeModal() {
+  document.getElementById('overlay').style.display='none';
+  modalState={proc:null,personId:null,raci:null};
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+  let total=0,assigned=0,r=0,a=0,c=0,im=0;
+  PHASES.forEach(ph=>ph.procs.forEach(proc=>{
+    total++; const pa=assignments[proc.name]||[];
+    if(pa.length) assigned++;
+    pa.forEach(x=>{if(x.raci==='R')r++;else if(x.raci==='A')a++;else if(x.raci==='C')c++;else if(x.raci==='I')im++;});
+  }));
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat"><div class="stat-v">${total}</div><div class="stat-l">Processes</div></div>
+    <div class="stat"><div class="stat-v">${assigned}</div><div class="stat-l">Assigned</div></div>
+    <div class="stat"><div class="stat-v" style="color:#0C447C">${r}</div><div class="stat-l">Responsible</div></div>
+    <div class="stat"><div class="stat-v" style="color:#993C1D">${a}</div><div class="stat-l">Accountable</div></div>
+    <div class="stat"><div class="stat-v" style="color:#3B6D11">${c}</div><div class="stat-l">Consulted</div></div>
+    <div class="stat"><div class="stat-v" style="color:#444441">${im}</div><div class="stat-l">Informed</div></div>`;
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+function renderFilters() {
+  const bar=document.getElementById('filterBar'); bar.innerHTML='';
+  const all=document.createElement('button'); all.className='fb active'; all.textContent='All phases';
+  all.onclick=()=>{currentPhase='all';document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));all.classList.add('active');renderBody();};
+  bar.appendChild(all);
+  PHASES.forEach(ph=>{
+    const btn=document.createElement('button'); btn.className='fb'; btn.textContent=ph.phase.split(' ')[0]; btn.title=ph.phase;
+    btn.onclick=()=>{currentPhase=ph.phase;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderBody();};
+    bar.appendChild(btn);
+  });
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function clearAssignments() {
+  if(!confirm('Clear all assignments? Team stays.')) return;
+  assignments={}; renderBody(); updateStats(); scheduleSave();
+}
+
+function exportCSV() {
+  let csv='Phase,Process,KPI,'+committedTeam.map(p=>`"${p.name} (${p.org.toUpperCase()})"`).join(',')+'\n';
+  PHASES.forEach(ph=>ph.procs.forEach(proc=>{
+    const row=[`"${ph.phase}"`,`"${proc.name}"`,`"${proc.kpi}"`];
+    committedTeam.forEach(p=>{row.push((assignments[proc.name]||[]).filter(a=>a.personId===p.id).map(a=>a.raci).join('/')||'');});
+    csv+=row.join(',')+'\n';
+  }));
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='AMSI_WorxOps_RACI.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  renderTeamInputs();
+  renderFilters();
+  updateStats();
+});
+
+function waitForGSI(attempts) {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+    initGoogleAuth();
+  } else if (attempts > 0) {
+    setTimeout(() => waitForGSI(attempts - 1), 300);
+  } else {
+    showInstructions();
+  }
+}
+</script>
+
+<!-- Load Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer onload="waitForGSI(20)"></script>
+
+</body>
+</html>
